@@ -1,4 +1,4 @@
-# https://www.codewars.com/kata/53f1015fa9fe02cbda00111a
+# https://www.codewars.com/kata/53f1015fa9fe02cbda00111a/python
 
 import random
 
