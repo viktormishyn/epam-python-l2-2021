@@ -14,8 +14,25 @@
 
 # Animal = make_class("name", "species", "age", "health", "weight", "color")
 
+import unittest
+
 
 def make_class(*args: str):
     """fuction takes list of attributes and creates class with those attributes"""
     attributes = {k: k for k in args}
     return type("Animal", (), attributes)
+
+
+class TestMakeClass(unittest.TestCase):
+    def setUp(self) -> None:
+        self.arguments = ("name", "species", "age",
+                          "health", "weight", "color")
+
+    def test_make_class_function(self):
+        Animal = make_class(*self.arguments)
+        animal = Animal()
+        self.assertIsInstance(animal, Animal)
+
+
+if __name__ == "__main__":
+    unittest.main()
