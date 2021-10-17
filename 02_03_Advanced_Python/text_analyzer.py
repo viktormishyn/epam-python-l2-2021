@@ -109,33 +109,29 @@ class Text():
         """Top 10 most used words"""
         return dict(Counter([word.text for word in self.words]).most_common(10))
 
-    @property
-    def longest_words(self) -> Dict[str, int]:
-        """Top 10 longest words"""
-        words = sorted(self.words, key=lambda w: w.length, reverse=True)
-        longest_words = {}
+    def top_words_by_length(self, reverse: bool) -> Dict[str, int]:
+        """pick top 10 unique words by length 
+        (reverse=True for longest words, reverse=False for shortest words)"""
+        words = sorted(self.words, key=lambda w: w.length, reverse=reverse)
+        top_words = {}
         count = 0
         for word in words:
             if count == 10:
                 break
-            if word.text not in longest_words.keys():
-                longest_words[word.text] = word.length
+            if word.text not in top_words.keys():
+                top_words[word.text] = word.length
                 count += 1
-        return longest_words
+        return top_words
+
+    @property
+    def longest_words(self) -> Dict[str, int]:
+        """Top 10 longest words"""
+        return self.top_words_by_length(reverse=True)
 
     @property
     def shortest_words(self) -> Dict[str, int]:
         """Top 10 shortest words"""
-        words = sorted(self.words, key=lambda w: w.length, reverse=False)
-        shortest_words = {}
-        count = 0
-        for word in words:
-            if count == 10:
-                break
-            if word.text not in shortest_words.keys():
-                shortest_words[word.text] = word.length
-                count += 1
-        return shortest_words
+        return self.top_words_by_length(reverse=False)
 
     @property
     def longest_sentences(self) -> Dict[str, int]:
@@ -184,10 +180,11 @@ def generate_report(text) -> str:
         "reportGeneratedAt": f"{dt.now()}",
         "timeOfExecution": f"{timeit.timeit() - start} ms"
     }
-    return json.dumps(result)
+    return json.dumps(result, indent=4)
 
 
 if __name__ == "__main__":
-    with open("data/text1.txt") as f:
+    input_path = sys.argv[1]
+    with open(input_path) as f:
         text = f.read()
     print(generate_report(text))
