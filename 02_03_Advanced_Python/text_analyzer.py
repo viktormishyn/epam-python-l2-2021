@@ -31,7 +31,8 @@ class Sentence():
             str.maketrans("", "", PUNCTUATION)).lower()
 
         # tokenize words
-        self.words = [Word(token) for token in word_tokenize(self.clean_text)]
+        self.words = [Word(token) for token in word_tokenize(
+            self.clean_text) if token != "-"]
 
         # length of the sentence (amount of words)
         self.length = len(self.words)
