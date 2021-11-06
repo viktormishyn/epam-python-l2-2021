@@ -6,7 +6,7 @@ import itertools
 import timeit
 import json
 import argparse
-import ssl
+import multiprocessing as mp
 import requests
 
 from typing import List, Dict
@@ -46,8 +46,9 @@ class Sentence():
 
 
 class Text():
-    def __init__(self, text) -> None:
+    def __init__(self, filename, text) -> None:
         # substitute all whitespaces with " "
+        self.filename = filename
         self.text = re.sub(r"\s+", " ", text)
 
         # list of Sentence objects
@@ -166,10 +167,11 @@ class Text():
         return sorted(set(self.palindromes), key=lambda p: len(p), reverse=True)[:10]
 
 
-def generate_report(text) -> str:
+def generate_report(filename, text, queue) -> Dict[str, any]:
     start = timeit.timeit()
-    t = Text(text)
+    t = Text(filename, text)
     result = {
+        "filename": t.filename,
         "numberOfCharacters": t.number_of_characters,
         "numberOfWords": t.number_of_words,
         "numberOfSentences": t.number_of_sentences,
@@ -188,7 +190,9 @@ def generate_report(text) -> str:
         "reportGeneratedAt": f"{dt.now()}",
         "timeOfExecution": f"{timeit.timeit() - start} ms"
     }
-    return json.dumps(result, indent=4)
+    queue.put(result)
+    return result
+    # print(json.dumps(result, indent=4))
 
 
 def parse_args():
@@ -196,10 +200,10 @@ def parse_args():
         and get back some data about it as a result"
     parser = argparse.ArgumentParser(description=description)
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-f', '--file', type=str, metavar='',
-                       help="Specify file with input text")
-    group.add_argument('-r', '--resource', type=str, metavar='',
-                       help="Specify resource with text file")
+    group.add_argument('-f', '--file', nargs='+',
+                       metavar='', help="Specify txt file(s)")
+    group.add_argument('-r', '--resource', nargs='+',
+                       metavar='', help="Specify txt file url(s)")
     args = parser.parse_args()
     return args
 
@@ -207,8 +211,23 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     if args.file:
-        with open(args.file) as f:
-            print(generate_report(f.read()))
+        processes = []
+        queue = mp.Queue()
+        for filename in args.file:
+            f = open(filename)
+            p = mp.Process(target=generate_report, args=[
+                           filename, f.read(), queue])
+            p.start()
+            processes.append(p)
+            f.close()
+        for process in processes:
+            process.join()
+        # Add result objects from the queue to the list
+        combined_result = []
+        queue.put(None)
+        combined_result = list(iter(queue.get, None))
+        print(json.dumps(combined_result, indent=4))
+
     elif args.resource:
         text = requests.get(args.resource).text
         print(generate_report(text))
