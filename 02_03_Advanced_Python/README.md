@@ -13,13 +13,13 @@ Python script that can analyze text and get back some data about it as a result.
 
 ## Usage
 
-- to print the output to the console:
+- Shows a list of commands when called with the flag -h (--help):
   ```bash
-  textanalyzer input/path/txt
+  text analyzer -h
   ```
-- to generate json file with report:
+- Prints the output to the console when called with the flag -f (--file):
   ```bash
-  textanalyzer input/path/txt > output/path/json
+  textanalyzer -f input/path/txt
   ```
 
 ## Development and Testing

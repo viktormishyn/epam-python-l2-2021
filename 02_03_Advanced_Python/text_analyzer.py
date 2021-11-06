@@ -187,17 +187,24 @@ def generate_report(text) -> str:
     return json.dumps(result, indent=4)
 
 
-def main():
+def parse_args():
     description = "Python script that can analyze text \
         and get back some data about it as a result"
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-f', '--file', help="Specify file with input text")
-    parser.add_argument('-r', '--resource',
-                        help="Specify resource with text file")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-f', '--file', type=str, metavar='',
+                       help="Specify file with input text")
+    group.add_argument('-r', '--resource', type=str, metavar='',
+                       help="Specify resource with text file")
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == "__main__":
-    input_path = sys.argv[1]
-    with open(input_path) as f:
-        text = f.read()
-    print(generate_report(text))
+    args = parse_args()
+    if args.file:
+        with open(args.file) as f:
+            text = f.read()
+            print(generate_report(text))
+    elif args.resource:
+        pass
