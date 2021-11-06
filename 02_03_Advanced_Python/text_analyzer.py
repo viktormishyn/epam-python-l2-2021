@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from typing import List, Dict
 from unicodedata import category
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -8,6 +10,7 @@ import re
 import itertools
 import timeit
 import json
+import argparse
 
 # utf-8 punctuation
 PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
@@ -182,6 +185,15 @@ def generate_report(text) -> str:
         "timeOfExecution": f"{timeit.timeit() - start} ms"
     }
     return json.dumps(result, indent=4)
+
+
+def main():
+    description = "Python script that can analyze text \
+        and get back some data about it as a result"
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-f', '--file', help="Specify file with input text")
+    parser.add_argument('-r', '--resource',
+                        help="Specify resource with text file")
 
 
 if __name__ == "__main__":

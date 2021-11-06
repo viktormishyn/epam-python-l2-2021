@@ -3,36 +3,38 @@
 text_analyzer.py  
 Python script that can analyze text and get back some data about it as a result.
 
-## Setup
+## Install
 
-1. Run `init.sh` to create virtual environment with dependencies
-2. Activate virtual environment:
-    ```bash
-    source .venv/bin/activate
-    ```
+1. Run `install.sh` to install requirements and dependencies (it will be installed globally)
+
+## Uninstall
+
+1. Run `uninstall.sh` to remove requirements, dependencies and script itself
 
 ## Usage
 
 - to print the output to the console:
   ```bash
-  python3 text_analyzer.py input/path/txt
-  ``` 
+  textanalyzer input/path/txt
+  ```
 - to generate json file with report:
   ```bash
-  python3 text_analyzer.py input/path/txt > output/path/json
+  textanalyzer input/path/txt > output/path/json
   ```
 
-## Testing
+## Development and Testing
 
-1. Install dev requirements:
+1. To reate virtualenv and install dev requirements run `install_dev.sh`
+2. Activate virtual env:
    ```bash
-   pip install -r requirements_dev.txt
+   source .venv/bin/activate
    ```
-2. Run unit tests:
+3. Run unit tests:
    ```bash
    pytest
    ```
-3. To see coverage:
+4. To see coverage:
    ```bash
    pytest --cov
    ```
+5. To uninstall dev environment simply delete .venv folder
