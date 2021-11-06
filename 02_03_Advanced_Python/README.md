@@ -17,9 +17,13 @@ Python script that can analyze text and get back some data about it as a result.
   ```bash
   text analyzer -h
   ```
-- Prints the output to the console when called with the flag -f (--file):
+- Analyzes local txt file and prints the output to the console when called with the flag -f (--file):
   ```bash
   textanalyzer -f input/path/txt
+  ```
+- Analyzes txt file from web and prints the output to the console when called with the flag -r (--resource):
+  ```bash
+  text analyzer -f <url>
   ```
 
 ## Development and Testing

@@ -1,16 +1,20 @@
 #!/usr/bin/python3
 
-from typing import List, Dict
-from unicodedata import category
-from nltk.tokenize import sent_tokenize, word_tokenize
-from collections import Counter
-from datetime import datetime as dt
 import sys
 import re
 import itertools
 import timeit
 import json
 import argparse
+import ssl
+import requests
+
+from typing import List, Dict
+from unicodedata import category
+from nltk.tokenize import sent_tokenize, word_tokenize
+from collections import Counter
+from datetime import datetime as dt
+from urllib.request import urlopen
 
 # utf-8 punctuation
 PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
@@ -204,7 +208,7 @@ if __name__ == "__main__":
     args = parse_args()
     if args.file:
         with open(args.file) as f:
-            text = f.read()
-            print(generate_report(text))
+            print(generate_report(f.read()))
     elif args.resource:
-        pass
+        text = requests.get(args.resource).text
+        print(generate_report(text))

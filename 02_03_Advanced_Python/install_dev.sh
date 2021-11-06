@@ -6,6 +6,7 @@ source .venv/bin/activate
 # install dev dependencies
 printf "\nInstalling requirements..."
 pip install -r requirements_dev.txt
+# pip install -r requirements.txt
 
 # install nltk dependencies to .venv
 printf "\nInstalling nltk dependencies..."
