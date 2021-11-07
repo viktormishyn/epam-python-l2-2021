@@ -8,13 +8,13 @@ import json
 import argparse
 import multiprocessing as mp
 import requests
+import logging
 
 from typing import List, Dict
 from unicodedata import category
 from nltk.tokenize import sent_tokenize, word_tokenize
 from collections import Counter
 from datetime import datetime as dt
-from urllib.request import urlopen
 
 # utf-8 punctuation
 PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
@@ -87,7 +87,7 @@ class Text():
 
     @property
     def frequency_of_characters(self) -> Dict[str, int]:
-        """Frequency of all characters in the text 
+        """Frequency of all characters in the text
         (including punctuation, but excluding whitespaces)"""
         return dict(Counter(self.text.replace(' ', '')).most_common())
 
@@ -119,7 +119,7 @@ class Text():
         return dict(Counter([word.text for word in self.words]).most_common(10))
 
     def top_words_by_length(self, reverse: bool) -> Dict[str, int]:
-        """pick top 10 unique words by length 
+        """pick top 10 unique words by length
         (reverse=True for longest words, reverse=False for shortest words)"""
         words = sorted(self.words, key=lambda w: w.length, reverse=reverse)
         top_words = {}
@@ -147,14 +147,14 @@ class Text():
         """Top 10 longest sentences (based on amount of words)"""
         sentences = sorted(
             self.sentences, key=lambda s: s.length, reverse=True)[:10]
-        return {s.raw_text: s.length for s in sentences}
+        return [s.raw_text for s in sentences]
 
     @property
     def shortest_sentences(self) -> Dict[str, int]:
         """Top 10 shortest sentences (based on amount of words)"""
         sentences = sorted(
             self.sentences, key=lambda s: s.length, reverse=False)[:10]
-        return {s.raw_text: s.length for s in sentences}
+        return [s.raw_text for s in sentences]
 
     @property
     def palindrome_words_num(self) -> int:
@@ -208,26 +208,68 @@ def parse_args():
     return args
 
 
+def textanalyzer_logger(resource_type='-', resource_name='-'):
+    logger = logging.LoggerAdapter(
+        logging.getLogger(__name__), {"resource_type": resource_type, "resource_name": resource_name})
+    FORMAT = "%(asctime)s|%(resource_type)s|%(resource_name)s|[%(levelname)s]|%(message)s"
+    logging.basicConfig(filename="textanalyzer.log",
+                        format=FORMAT, level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S')
+    return logger
+
+
+def perform_processing(args, resource_type):
+    processes = []
+    queue = mp.Queue()
+    try:
+        for filename in args:
+            process_document(filename, resource_type, processes, queue)
+
+        for process in processes:
+            process.join()
+
+        # print combined result as json
+        combine_results(queue)
+
+    except:
+        textanalyzer_logger().error("Processing failed...")
+
+
+def process_document(resource_name, resource_type, processes, queue):
+    # skip processing if not txt file
+    if resource_name.split('.')[-1] != 'txt':
+        textanalyzer_logger(
+            '--file', resource_name).warning("Invalid resource. Should be .txt document")
+        return
+    # start processing
+    if resource_type == '--file':
+        with open(resource_name) as f:
+            p = mp.Process(target=generate_report, args=[
+                resource_name, f.read(), queue])
+    elif resource_type == '--resource':
+        text = requests.get(resource_name).text
+        p = mp.Process(target=generate_report, args=[
+                       resource_name, text, queue])
+    p.start()
+    # append process to the list of processes
+    processes.append(p)
+
+    # log processing
+    textanalyzer_logger(
+        resource_type, resource_name).info("Processing...")
+
+
+def combine_results(queue):
+    # Add result objects from the queue to the list
+    queue.put(None)
+    combined_result = list(iter(queue.get, None))
+    print(json.dumps(combined_result, indent=4))
+    textanalyzer_logger().info("Processing completed...")
+
+
 if __name__ == "__main__":
     args = parse_args()
     if args.file:
-        processes = []
-        queue = mp.Queue()
-        for filename in args.file:
-            f = open(filename)
-            p = mp.Process(target=generate_report, args=[
-                           filename, f.read(), queue])
-            p.start()
-            processes.append(p)
-            f.close()
-        for process in processes:
-            process.join()
-        # Add result objects from the queue to the list
-        combined_result = []
-        queue.put(None)
-        combined_result = list(iter(queue.get, None))
-        print(json.dumps(combined_result, indent=4))
+        perform_processing(args.file, '--file')
 
     elif args.resource:
-        text = requests.get(args.resource).text
-        print(generate_report(text))
+        perform_processing(args.resource, '--resource')

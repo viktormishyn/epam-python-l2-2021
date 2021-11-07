@@ -6,7 +6,7 @@ class TestTextAnalyzer(TestCase):
     def setUp(self):
         text = "Test paragraph. Madam somehow deified redivider! \
             How many sentences does it contain? It contains 4 sentences"
-        self.test_text = Text(text)
+        self.test_text = Text('test_file', text)
 
     def test_number_of_characters(self):
         # without whitespaces
@@ -20,13 +20,13 @@ class TestTextAnalyzer(TestCase):
 
     def test_frequency_of_characters(self):
         # without whitespaces
-        t = Text("aaab bbbc ccc c")
+        t = Text("test_text", "aaab bbbc ccc c")
         result = t.frequency_of_characters
         expected = {'a': 3, 'b': 4, 'c': 5}
         self.assertDictEqual(result, expected)
 
     def test_distribution_of_characters(self):
-        t = Text("abbbbbbbbb")
+        t = Text("test_text", "abbbbbbbbb")
         result = t.distribution_of_characters
         expected = {'a': '10.00 %', 'b': '90.00 %'}
         self.assertDictEqual(result, expected)
@@ -59,13 +59,14 @@ class TestTextAnalyzer(TestCase):
 
     def test_longest_sentences(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.longest_sentences.items()]
-        self.assertEqual(result[0], ('How many sentences does it contain?', 6))
+        result = [item for item in self.test_text.longest_sentences]
+        print(result)
+        self.assertEqual(result[0], ('How many sentences does it contain?'))
 
     def test_shortest_sentences(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.shortest_sentences.items()]
-        self.assertEqual(result[0], ('Test paragraph.', 2))
+        result = [item for item in self.test_text.shortest_sentences]
+        self.assertEqual(result[0], ('Test paragraph.'))
 
     def test_palindrome_words_num(self):
         result = self.test_text.palindrome_words_num
@@ -78,7 +79,7 @@ class TestTextAnalyzer(TestCase):
         self.assertEqual(result, expected)
 
     def test_define_is_palindrome(self):
-        palindrome_text = Text("""
+        palindrome_text = Text("test_text", """
         Are we not pure? “No, sir!” 
         Panama’s moody Noriega brags. 
         “It is garbage!” 
