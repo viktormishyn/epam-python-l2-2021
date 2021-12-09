@@ -1,0 +1,28 @@
+Are you fascinated by the amount of text data available on the internet? 
+Are you looking for ways to work with this text data but aren't sure where to begin? 
+Machines, after all, recognize numbers, not the letters of our language. 
+And that can be a tricky landscape to navigate in machine learning. 
+So how can we manipulate and clean this text data to build a model? 
+The answer lies in the wonderful world of Natural Language Processing (NLP).
+Solving an NLP problem is a multi-stage process. 
+We need to clean the unstructured text data first before we can even think about getting to the modeling stage. 
+Cleaning the data consists of a few key steps:
+- Word tokenization
+- Predicting parts of speech for each token
+- Text lemmatization
+- Identifying and removing stop words, and much more.
+
+In this article, we will talk about the very first step – tokenization. 
+We will first see what tokenization is and why it’s required in NLP. 
+We will then look at six unique ways to perform tokenization in Python.
+This article has no prerequisites. 
+Anyone with an interest in NLP or data science will be able to follow along. 
+If you’re looking for an end-to-end resource for learning NLP, 
+you should check out our comprehensive course: Natural Language Processing using Python.
+
+What is Tokenization in NLP?
+Tokenization is one of the most common tasks when it comes to working with text data. 
+But what does the term ‘tokenization’ actually mean?
+Tokenization is essentially splitting a phrase, sentence, paragraph, 
+or an entire text document into smaller units, such as individual words or terms. 
+Each of these smaller units are called tokens.
