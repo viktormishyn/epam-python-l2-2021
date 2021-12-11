@@ -39,6 +39,10 @@ Python script that can analyze text and get back some data about it as a result.
    ```
 4. To see coverage:
    ```bash
-   pytest --cov
+   pytest --cov-report html --cov=.
+   ```
+   or
+   ```bash
+   pytest --cov-report term-missing --cov=.
    ```
 5. To uninstall dev environment simply delete .venv folder
