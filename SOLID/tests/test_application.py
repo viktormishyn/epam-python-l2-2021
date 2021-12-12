@@ -9,7 +9,7 @@ class ApplicationTest(unittest.TestCase):
 
     def setUp(self):
         self.proc = subprocess.Popen(
-            ["python", "-m", "task_list"],
+            ["python3", "-m", "task_list"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             universal_newlines=True)
         self.timer = Timer(self.TIMEOUT, self.proc.kill)
