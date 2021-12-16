@@ -13,7 +13,7 @@ import { AnnouncementAppStage } from "./announcement-app-stage";
 const REPO = "viktormishyn/epam-python-l2-2021";
 const BRANCH = "SERVERLESS_APP";
 
-const oauth = cdk.SecretValue.secretsManager("github-token-cdk-pipeline");
+const OAUTH = cdk.SecretValue.secretsManager("github-token-cdk-pipeline");
 
 /**
  * The stack that defines the application pipeline
@@ -26,7 +26,7 @@ export class AnnouncementAppPipelineStack extends cdk.Stack {
       pipelineName: "AnnouncementAppPipeline",
       synth: new CodeBuildStep("SynthStep", {
         input: CodePipelineSource.gitHub(REPO, BRANCH, {
-          authentication: oauth,
+          authentication: OAUTH,
           trigger: GitHubTrigger.WEBHOOK,
         }),
         installCommands: ["npm install -g aws-cdk"],
