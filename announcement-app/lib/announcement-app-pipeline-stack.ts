@@ -4,6 +4,8 @@ import {
   CodeBuildStep,
   CodePipeline,
   CodePipelineSource,
+  ManualApprovalStep,
+  ShellStep,
 } from "aws-cdk-lib/pipelines";
 import { Construct } from "constructs";
 import { AnnouncementAppStage } from "./announcement-app-stage";
@@ -32,6 +34,7 @@ export class AnnouncementAppPipelineStack extends cdk.Stack {
           "cd announcement-app",
           "npm ci",
           "npm run build",
+          "npm run test",
           "npx cdk synth",
           "mv cdk.out ../",
         ],
@@ -40,10 +43,19 @@ export class AnnouncementAppPipelineStack extends cdk.Stack {
 
     // add dev stage
     const dev = new AnnouncementAppStage(this, "Dev");
-    pipeline.addStage(dev);
+    pipeline.addStage(dev, {
+      post: [
+        new ShellStep("Validate Endpoint", {
+          envFromCfnOutputs: { ENDPOINT_URL: dev.urlOutput },
+          commands: ["curl -Ssf $ENDPOINT_URL'getAnnouncements'"],
+        }),
+      ],
+    });
 
     // add prod stage
     const prod = new AnnouncementAppStage(this, "Prod");
-    pipeline.addStage(prod);
+    pipeline.addStage(prod, {
+      pre: [new ManualApprovalStep("PromoteToProd")],
+    });
   }
 }
