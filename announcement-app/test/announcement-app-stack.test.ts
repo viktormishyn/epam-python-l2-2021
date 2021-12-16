@@ -1,14 +1,14 @@
 import * as cdk from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
-import * as AnnouncementApp from "../lib/announcement-app-stack";
+import { AnnouncementAppStack } from "../lib/announcement-app-stack";
 
 const app = new cdk.App();
 
-describe("Template created with correct definition", () => {
-  const stack = new AnnouncementApp.AnnouncementAppStack(app, "TestStack");
+describe("Infrastructure template created with correct definition", () => {
+  const stack = new AnnouncementAppStack(app, "InfrastructureStack");
   const template = Template.fromStack(stack);
 
-  it("DynamoDB table Created", () => {
+  it("DynamoDB Table Created", () => {
     template.hasResourceProperties("AWS::DynamoDB::Table", {});
   });
 

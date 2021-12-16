@@ -45,7 +45,7 @@ export class AnnouncementAppStack extends Stack {
         "POST",
         new apigateway.LambdaIntegration(announcementsApiLambda)
       );
-    this.urlOutput = new CfnOutput(this, "Url", {
+    this.urlOutput = new CfnOutput(this, "announcementsApiUrl", {
       value: api.url,
     });
   }
