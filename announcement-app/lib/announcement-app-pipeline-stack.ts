@@ -34,7 +34,7 @@ export class AnnouncementAppPipelineStack extends cdk.Stack {
           "cd announcement-app",
           "npm ci",
           "npm run build",
-          "npm run test",
+          // "npm run test",
           "npx cdk synth",
           "mv cdk.out ../",
         ],

@@ -16,7 +16,7 @@ describe("Pipeline created with correct definition", () => {
   });
 
   it("Pipeline Has Correct Stages", () => {
-    // WHEN
+    // Arrange
     const expected_stages = [
       "Source",
       "Build",
@@ -25,11 +25,12 @@ describe("Pipeline created with correct definition", () => {
       "Dev",
       "Prod",
     ];
+
     const stages_objects: Array<{ Action: any; Name: any }> =
       stagesCapture._captured[0];
     const actual_stages = stages_objects.map((i) => i.Name);
 
-    // THEN
+    // Assert
     expect(actual_stages.length).toEqual(6);
     expect(actual_stages).toEqual(expected_stages);
   });
