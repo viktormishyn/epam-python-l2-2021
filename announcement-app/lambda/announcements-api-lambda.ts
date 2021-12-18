@@ -1,14 +1,26 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { DocumentClient } from "aws-sdk/clients/dynamodb";
+
+const dynamoDB = new DocumentClient();
 
 const getErrorResponse = (errorMessage: string) => {
   return { statusCode: 500, body: JSON.stringify({ message: errorMessage }) };
 };
 
-export function getAnnouncements(): APIGatewayProxyResult {
-  return {
-    statusCode: 200,
-    body: "Getting announcements from DynamoDB...",
+export async function getAnnouncements(): Promise<APIGatewayProxyResult> {
+  const params: DocumentClient.ScanInput = {
+    TableName: process.env.ANNOUNCEMENT_APP_TABLE as string,
   };
+  try {
+    const data = await dynamoDB.scan(params).promise();
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data),
+    };
+  } catch (err) {
+    console.log(err);
+    return getErrorResponse(err as string);
+  }
 }
 
 export function addAnnouncement(): APIGatewayProxyResult {

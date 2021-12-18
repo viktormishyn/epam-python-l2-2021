@@ -1,11 +1,47 @@
 import { handler } from "../lambda/announcements-api-lambda";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { DocumentClient } from "aws-sdk/clients/dynamodb";
+
+// mock dynamodb DocumentClient
+
+let dynamoDBItems = { Items: [1, 2, 3, 4] };
+
+const dynamoDBResult = {
+  promise() {
+    return Promise.resolve(dynamoDBItems);
+  },
+};
+
+jest.mock("aws-sdk/clients/dynamodb", () => {
+  return {
+    DocumentClient: jest.fn(() => {
+      return {
+        scan: jest.fn(() => {
+          return dynamoDBResult;
+        }),
+      };
+    }),
+  };
+});
+
+const envMocks = {
+  ANNOUNCEMENT_APP_TABLE: "announcement-app-table",
+};
+
+beforeEach(() => {
+  process.env = envMocks;
+});
 
 describe("Announcements API lambda returns correct results for GET requests", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   it("Lambda Returns Correct Body and Status Code", async () => {
     // Arrange & Act
+
     const expectedResult: APIGatewayProxyResult = {
-      body: "Getting announcements from DynamoDB...",
+      body: JSON.stringify(dynamoDBItems),
       statusCode: 200,
     };
 
@@ -14,6 +50,11 @@ describe("Announcements API lambda returns correct results for GET requests", ()
 
     // Assert
     expect(actualResult).toEqual(expectedResult);
+  });
+
+  it("DocumentClient is Called Once", () => {
+    // Assert
+    expect(DocumentClient).toHaveBeenCalledTimes(1);
   });
 });
 
