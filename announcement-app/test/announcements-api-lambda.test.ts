@@ -4,11 +4,10 @@ import { DocumentClient } from "aws-sdk/clients/dynamodb";
 
 // mock dynamodb DocumentClient
 
-let dynamoDBItems = { Items: [1, 2, 3, 4] };
-
-const dynamoDBResult = {
+const dynamoDBResult = "DynamoDB result";
+const dynamoDBResultMock = {
   promise() {
-    return Promise.resolve(dynamoDBItems);
+    return Promise.resolve(dynamoDBResult);
   },
 };
 
@@ -17,7 +16,10 @@ jest.mock("aws-sdk/clients/dynamodb", () => {
     DocumentClient: jest.fn(() => {
       return {
         scan: jest.fn(() => {
-          return dynamoDBResult;
+          return dynamoDBResultMock;
+        }),
+        put: jest.fn(() => {
+          return dynamoDBResultMock;
         }),
       };
     }),
@@ -41,7 +43,7 @@ describe("Announcements API lambda returns correct results for GET requests", ()
     // Arrange & Act
 
     const expectedResult: APIGatewayProxyResult = {
-      body: JSON.stringify(dynamoDBItems),
+      body: JSON.stringify(dynamoDBResult),
       statusCode: 200,
     };
 
@@ -61,16 +63,62 @@ describe("Announcements API lambda returns correct results for GET requests", ()
 describe("Announcements API lambda returns correct results for POST requests", () => {
   it("Lambda Returns Correct Body and Status Code", async () => {
     // Arrange & Act
-    const expectedResult: APIGatewayProxyResult = {
-      body: "Adding announcement to DynamoDB...",
-      statusCode: 201,
-    };
-
-    const event: APIGatewayProxyEvent = { httpMethod: "POST" } as any;
+    const event: APIGatewayProxyEvent = {
+      httpMethod: "POST",
+      body: '{ "author": "Adam Clark", "text": "Announcement" }',
+    } as any;
     const actualResult = await handler(event, {});
 
     // Assert
-    expect(actualResult).toEqual(expectedResult);
+    expect(actualResult.statusCode).toEqual(201);
+    expect(JSON.parse(actualResult.body)).toMatchObject({
+      author: "Adam Clark",
+    });
+    expect(JSON.parse(actualResult.body)).toMatchObject({
+      text: "Announcement",
+    });
+  });
+  it("Lambda Returns Correct Body and Status Code if 'author' value too long", async () => {
+    // Arrange & Act
+    const event: APIGatewayProxyEvent = {
+      httpMethod: "POST",
+      body: `{ "author": "${"#".repeat(101)}", "text": "Announcement" }`,
+    } as any;
+    const actualResult = await handler(event, {});
+
+    // Assert
+    expect(actualResult.statusCode).toEqual(400);
+    expect(actualResult.body).toEqual(
+      '{"message":"Author\'s name shouldn\'t be longer than 100 chars"}'
+    );
+  });
+  it("Lambda Returns Correct Body and Status Code if 'text' value too long", async () => {
+    // Arrange & Act
+    const event: APIGatewayProxyEvent = {
+      httpMethod: "POST",
+      body: `{ "author": "Adam Clark", "text": "${"#".repeat(201)}" }`,
+    } as any;
+    const actualResult = await handler(event, {});
+
+    // Assert
+    expect(actualResult.statusCode).toEqual(400);
+    expect(actualResult.body).toEqual(
+      '{"message":"Announcement shouldn\'t be longer than 200 chars"}'
+    );
+  });
+  it("Lambda Returns Correct Body and Status Code if there are no 'author' or 'text' Fields", async () => {
+    // Arrange & Act
+    const event: APIGatewayProxyEvent = {
+      httpMethod: "POST",
+      body: `{"text": "Announcement" }`,
+    } as any;
+    const actualResult = await handler(event, {});
+
+    // Assert
+    expect(actualResult.statusCode).toEqual(400);
+    expect(actualResult.body).toEqual(
+      "{\"message\":\"'author' and 'text' fields are required!\"}"
+    );
   });
 });
 
