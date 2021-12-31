@@ -13,7 +13,9 @@ export class AnnouncementAppStack extends Stack {
 
     // DynamoDB table definition
     const announcementsTable = new dynamodb.Table(this, "AnnouncementsTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.NUMBER },
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "timestamp", type: dynamodb.AttributeType.NUMBER },
+      timeToLiveAttribute: "ttl",
     });
 
     // AnnouncementsApiLambda lambda definition and permissions
