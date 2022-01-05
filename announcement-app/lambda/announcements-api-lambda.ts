@@ -58,7 +58,7 @@ async function addAnnouncement(
   const dt = new Date();
 
   const timestamp = dt.getTime();
-  const ttl = Math.floor(timestamp / 1000);
+  const expirationTime = Math.floor(timestamp / 1000) + 86400;
   const publishedAt = dt.toISOString().slice(0, 19).replace("T", " ");
 
   try {
@@ -67,7 +67,7 @@ async function addAnnouncement(
       Item: {
         pk,
         sk: timestamp,
-        ttl,
+        expirationTime,
         publishedAt,
         author,
         announcement,
