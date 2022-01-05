@@ -7,6 +7,7 @@ Simple serverless app for publishing and retrieving announcements
 - TypeScript
 - Jest
 - AWS CDK v2
+- AWS SDK v2
 - AWS Lambda, API Gateway, DynamoDB
 
 ## Documentation

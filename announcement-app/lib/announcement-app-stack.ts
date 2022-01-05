@@ -13,8 +13,8 @@ export class AnnouncementAppStack extends Stack {
 
     // DynamoDB table definition
     const announcementsTable = new dynamodb.Table(this, "AnnouncementsTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "timestamp", type: dynamodb.AttributeType.NUMBER },
+      partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "sk", type: dynamodb.AttributeType.NUMBER },
       timeToLiveAttribute: "ttl",
     });
 

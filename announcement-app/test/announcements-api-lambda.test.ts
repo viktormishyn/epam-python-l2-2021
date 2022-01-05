@@ -15,7 +15,7 @@ jest.mock("aws-sdk/clients/dynamodb", () => {
   return {
     DocumentClient: jest.fn(() => {
       return {
-        scan: jest.fn(() => {
+        query: jest.fn(() => {
           return dynamoDBResultMock;
         }),
         put: jest.fn(() => {
