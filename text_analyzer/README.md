@@ -15,7 +15,7 @@ Python script that can analyze text and get back some data about it as a result.
 
 - Shows a list of commands when called with the flag -h (--help):
   ```bash
-  text analyzer -h
+  textanalyzer -h
   ```
 - Analyzes local txt file(s) and prints the output to the console when called with the flag -f (--file):
   ```bash
@@ -23,8 +23,12 @@ Python script that can analyze text and get back some data about it as a result.
   ```
 - Analyzes txt file from web and prints the output to the console when called with the flag -r (--resource):
   ```bash
-  text analyzer -f <url>
+  textanalyzer -r <url>
   ```
+- Reads previous results from database when called with the flag -v (--view):
+  ```bash
+  textanalyzer -v mytext.txt
+  ``` 
 
 ## Development and Testing
 

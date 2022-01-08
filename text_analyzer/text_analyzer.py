@@ -22,6 +22,10 @@ from datetime import datetime as dt
 PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
                        if category(chr(i)).startswith("P") and chr(i) != '-'])
 
+# database filename
+DB_FILENAME = 'textanalyzer_results.db'
+DB_TABLENAME = 'texts'
+
 
 class Word():
     def __init__(self, token) -> None:
@@ -197,42 +201,39 @@ def generate_report(file_path, text, queue) -> Dict[str, any]:
     return result
 
 
+# ======================== DATABASE ========================
+
+
 def write_to_db(result_json) -> None:
     """Writes file analysis results to database.
     If entry for this file already exists, result will be replaced with current.
     """
     textanalyzer_logger().info("Writing result to db...")
-    conn = sqlite3.connect('textanalyzer_results.db')
+    conn = sqlite3.connect(DB_FILENAME)
     cur = conn.cursor()
     cur.execute(
-        "CREATE TABLE IF NOT EXISTS texts (filename VARCHAR(50) PRIMARY KEY, data JSON)"
+        f"CREATE TABLE IF NOT EXISTS {DB_TABLENAME} (filename VARCHAR(50) PRIMARY KEY, data JSON)"
     )
     cur.execute("INSERT OR REPLACE INTO texts VALUES(?, ?)", [
-                result_json["filename"], json.dumps(result_json)])
+                result_json["filename"], json.dumps(result_json, indent=4)])
     conn.commit()
     textanalyzer_logger().info("Result has written to db...")
 
 
-def parse_args():
-    description = "Python script that can analyze text \
-        and get back some data about it as a result"
-    parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-f', '--file', nargs='+',
-                       metavar='', help="Specify txt file(s)")
-    group.add_argument('-r', '--resource', nargs='+',
-                       metavar='', help="Specify txt file url(s)")
-    args = parser.parse_args()
-    return args
+def read_from_db(filename) -> None:
+    """Reads file analysis result from database and prints it out to the console"""
+    conn = sqlite3.connect(DB_FILENAME)
+    cur = conn.cursor()
+    cur.execute(
+        f"SELECT data FROM {DB_TABLENAME} WHERE filename=?", [filename])
+    try:
+        result = cur.fetchall()[0][0]
+        print(f"\n{result}\n")
+    except IndexError:
+        print(f"\nData for this filename not found\n")
 
 
-def textanalyzer_logger(resource_type='-', resource_name='-'):
-    logger = logging.LoggerAdapter(
-        logging.getLogger(__name__), {"resource_type": resource_type, "resource_name": resource_name})
-    FORMAT = "%(asctime)s|%(resource_type)s|%(resource_name)s|[%(levelname)s]|%(message)s"
-    logging.basicConfig(filename="textanalyzer.log",
-                        format=FORMAT, level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S')
-    return logger
+# ======================== MULTIPROCESSING ========================
 
 
 def perform_processing(args, resource_type):
@@ -284,6 +285,33 @@ def combine_results(queue):
     textanalyzer_logger().info("Processing completed...")
 
 
+# ======================== ARGS PARSER, LOGGING ========================
+
+
+def parse_args():
+    description = "Python script that can analyze text \
+        and get back some data about it as a result"
+    parser = argparse.ArgumentParser(description=description)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-f', '--file', nargs='+',
+                       metavar='', help="Specify txt file(s)")
+    group.add_argument('-r', '--resource', nargs='+',
+                       metavar='', help="Specify txt file url(s)")
+    group.add_argument('-v', '--view', nargs='+',
+                       metavar='', help="Specify filename")
+    args = parser.parse_args()
+    return args
+
+
+def textanalyzer_logger(resource_type='-', resource_name='-'):
+    logger = logging.LoggerAdapter(
+        logging.getLogger(__name__), {"resource_type": resource_type, "resource_name": resource_name})
+    FORMAT = "%(asctime)s|%(resource_type)s|%(resource_name)s|[%(levelname)s]|%(message)s"
+    logging.basicConfig(filename="textanalyzer.log",
+                        format=FORMAT, level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S')
+    return logger
+
+
 if __name__ == "__main__":
     args = parse_args()
     if args.file:
@@ -291,3 +319,7 @@ if __name__ == "__main__":
 
     elif args.resource:
         perform_processing(args.resource, '--resource')
+
+    elif args.view:
+        for filename in args.view:
+            read_from_db(filename)
