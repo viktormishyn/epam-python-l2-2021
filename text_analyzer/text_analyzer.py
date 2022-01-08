@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import sys
 import re
 import itertools
@@ -9,6 +10,7 @@ import argparse
 import multiprocessing as mp
 import requests
 import logging
+import sqlite3
 
 from typing import List, Dict
 from unicodedata import category
@@ -46,9 +48,9 @@ class Sentence():
 
 
 class Text():
-    def __init__(self, filename, text) -> None:
+    def __init__(self, file_path, text) -> None:
         # substitute all whitespaces with " "
-        self.filename = filename
+        self.filename = os.path.basename(file_path)
         self.text = re.sub(r"\s+", " ", text)
 
         # list of Sentence objects
@@ -167,9 +169,9 @@ class Text():
         return sorted(set(self.palindromes), key=lambda p: len(p), reverse=True)[:10]
 
 
-def generate_report(filename, text, queue) -> Dict[str, any]:
+def generate_report(file_path, text, queue) -> Dict[str, any]:
     start = timeit.timeit()
-    t = Text(filename, text)
+    t = Text(file_path, text)
     result = {
         "filename": t.filename,
         "numberOfCharacters": t.number_of_characters,
@@ -191,8 +193,24 @@ def generate_report(filename, text, queue) -> Dict[str, any]:
         "timeOfExecution": f"{timeit.timeit() - start} ms"
     }
     queue.put(result)
+    write_to_db(result)
     return result
-    # print(json.dumps(result, indent=4))
+
+
+def write_to_db(result_json) -> None:
+    """Writes file analysis results to database.
+    If entry for this file already exists, result will be replaced with current.
+    """
+    textanalyzer_logger().info("Writing result to db...")
+    conn = sqlite3.connect('textanalyzer_results.db')
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS texts (filename VARCHAR(50) PRIMARY KEY, data JSON)"
+    )
+    cur.execute("INSERT OR REPLACE INTO texts VALUES(?, ?)", [
+                result_json["filename"], json.dumps(result_json)])
+    conn.commit()
+    textanalyzer_logger().info("Result has written to db...")
 
 
 def parse_args():
@@ -221,8 +239,8 @@ def perform_processing(args, resource_type):
     processes = []
     queue = mp.Queue()
     try:
-        for filename in args:
-            process_document(filename, resource_type, processes, queue)
+        for file_path in args:
+            process_document(file_path, resource_type, processes, queue)
 
         for process in processes:
             process.join()
