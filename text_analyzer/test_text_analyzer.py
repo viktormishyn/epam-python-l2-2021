@@ -49,13 +49,13 @@ class TestTextAnalyzer(TestCase):
 
     def test_longest_words(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.longest_words.items()]
-        self.assertEqual(result[0], ('paragraph', 9))
+        result = self.test_text.longest_words
+        self.assertEqual(result[0], 'paragraph')
 
     def test_shortest_words(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.shortest_words.items()]
-        self.assertEqual(result[1], ('it', 2))
+        result = self.test_text.shortest_words
+        self.assertEqual(result[1], 'it')
 
     def test_longest_sentences(self):
         # convert dict into a list of tuples

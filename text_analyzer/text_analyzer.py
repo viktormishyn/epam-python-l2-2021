@@ -133,14 +133,14 @@ class Text():
         return top_words
 
     @property
-    def longest_words(self) -> Dict[str, int]:
+    def longest_words(self) -> List[str]:
         """Top 10 longest words"""
-        return self.top_words_by_length(reverse=True)
+        return list(self.top_words_by_length(reverse=True).keys())
 
     @property
-    def shortest_words(self) -> Dict[str, int]:
+    def shortest_words(self) -> List[str]:
         """Top 10 shortest words"""
-        return self.top_words_by_length(reverse=False)
+        return list(self.top_words_by_length(reverse=False).keys())
 
     @property
     def longest_sentences(self) -> Dict[str, int]:
