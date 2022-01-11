@@ -88,3 +88,56 @@ class TestTextAnalyzer(TestCase):
         result = palindrome_text.is_palindrome
         expected = True
         self.assertTrue(result, expected)
+
+
+def test_text_analyzer_args_parser(mocker):
+    mocker.patch("argparse.ArgumentParser.parse_args",
+                 return_value=argparse.Namespace(file="test.txt"))
+    result = parse_args()
+    assert result.file == 'test.txt'
+
+
+def test_text_analyzer_result(mocker, capfd):
+
+    # Arrange & Act
+    mocker.patch("text_analyzer.write_to_db", return_value=None)
+    perform_processing(['tests/data/text1.txt'], '--file')
+    out, _ = capfd.readouterr()
+    result = json.loads(out)[0]
+
+    # Assert
+    assert result["filename"] == "text1.txt"
+    assert result["numberOfCharacters"] == 1355
+    assert result["numberOfWords"] == 274
+    assert result["numberOfSentences"] == 20
+    assert result["frequencyOfCharacters"]["e"] == 148
+    assert result["distributionOfCharacters"]["e"] == "10.92 %"
+    assert result["topMostUsedWords"]["and"] == 5
+    assert result["topLongestWords"][0] == "lemmatization"
+
+
+def test_text_analyzer_db_write_read(capfd, mock_db):
+
+    # Arrange & Act
+    data = {"filename": "test", "data": {}}
+    write_to_db(data)
+    read_from_db(data["filename"])
+    out, _ = capfd.readouterr()
+    result = json.loads(out)
+
+    # Assert
+    assert result["filename"] == "test"
+    assert result["data"] == {}
+
+
+def test_text_analyzer_displays_result_from_db(capfd, mock_db):
+
+    # Arrange & Act
+    perform_processing(['tests/data/text1.txt'], '--file')
+
+    os.system('text_analyzer.py --view text1.txt')
+    out, _ = capfd.readouterr()
+    result = json.loads(out)[0]
+
+    # Assert
+    assert result["filename"] == "text1.txt"

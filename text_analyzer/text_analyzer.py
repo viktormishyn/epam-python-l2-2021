@@ -23,7 +23,7 @@ PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
                        if category(chr(i)).startswith("P") and chr(i) != '-'])
 
 # database filename
-DB_FILENAME = 'textanalyzer_results.db'
+DB_FILENAME = os.path.expanduser('~/textanalyzer_results.db')
 DB_TABLENAME = 'texts'
 
 
