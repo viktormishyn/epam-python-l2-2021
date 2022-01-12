@@ -1,5 +1,8 @@
+import argparse
+import json
+import os
 from unittest import TestCase
-from text_analyzer import *
+from text_analyzer import Text, parse_args, perform_processing, write_to_db, read_from_db
 
 
 class TestTextAnalyzer(TestCase):
