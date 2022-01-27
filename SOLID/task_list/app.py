@@ -1,16 +1,16 @@
-from typing import Dict, List
+from typing import Dict
 
 from task_list.console import Console
-from task_list.task import Task
+from task_list.project import Project
 
 
-class TaskList:
+class App:
     QUIT = "quit"
 
     def __init__(self, console: Console) -> None:
         self.console = console
         self.last_id: int = 0
-        self.tasks: Dict[str, List[Task]] = dict()
+        self.projects: Dict[str, Project] = {}
 
     def run(self) -> None:
         while True:
@@ -36,9 +36,9 @@ class TaskList:
             self.error(command)
 
     def show(self) -> None:
-        for project, tasks in self.tasks.items():
-            self.console.print(project)
-            for task in tasks:
+        for project in self.projects.values():
+            self.console.print(project.name)
+            for task in project.tasks.values():
                 self.console.print(f"  [{'x' if task.is_done() else ' '}] {task.id}: {task.description}")
             self.console.print()
 
@@ -52,15 +52,14 @@ class TaskList:
             self.add_task(project_task[0], project_task[1])
 
     def add_project(self, name: str) -> None:
-        self.tasks[name] = []
+        self.projects[name] = Project(name)
 
-    def add_task(self, project: str, description: str) -> None:
-        project_tasks = self.tasks.get(project)
-        if project_tasks is None:
-            self.console.print(f"Could not find a project with the name {project}.")
-            self.console.print()
+    def add_task(self, project_name: str, description: str) -> None:
+        if project := self.projects.get(project_name):
+            project.add_task(self.next_id(), description)
             return
-        project_tasks.append(Task(self.next_id(), description, False))
+        self.console.print(f"Could not find a project with the name {project_name}.")
+        self.console.print()
 
     def check(self, id_string: str) -> None:
         self.set_done(id_string, True)
@@ -70,11 +69,10 @@ class TaskList:
 
     def set_done(self, id_string: str, done: bool) -> None:
         id_ = int(id_string)
-        for project, tasks in self.tasks.items():
-            for task in tasks:
-                if task.id == id_:
-                    task.set_done(done)
-                    return
+        for project in self.projects.values():
+            if task := project.tasks.get(id_):
+                task.set_done(done)
+                return
         self.console.print(f"Could not find a task with an ID of {id_}")
         self.console.print()
 
@@ -94,4 +92,3 @@ class TaskList:
     def next_id(self) -> int:
         self.last_id += 1
         return self.last_id
-
