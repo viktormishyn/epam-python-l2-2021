@@ -1,5 +1,8 @@
+import argparse
+import json
+import os
 from unittest import TestCase
-from text_analyzer import *
+from text_analyzer import Text, parse_args, perform_processing, write_to_db, read_from_db
 
 
 class TestTextAnalyzer(TestCase):
@@ -49,13 +52,13 @@ class TestTextAnalyzer(TestCase):
 
     def test_longest_words(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.longest_words.items()]
-        self.assertEqual(result[0], ('paragraph', 9))
+        result = self.test_text.longest_words
+        self.assertEqual(result[0], 'paragraph')
 
     def test_shortest_words(self):
         # convert dict into a list of tuples
-        result = [(k, v) for k, v in self.test_text.shortest_words.items()]
-        self.assertEqual(result[1], ('it', 2))
+        result = self.test_text.shortest_words
+        self.assertEqual(result[1], 'it')
 
     def test_longest_sentences(self):
         # convert dict into a list of tuples
@@ -88,3 +91,56 @@ class TestTextAnalyzer(TestCase):
         result = palindrome_text.is_palindrome
         expected = True
         self.assertTrue(result, expected)
+
+
+def test_text_analyzer_args_parser(mocker):
+    mocker.patch("argparse.ArgumentParser.parse_args",
+                 return_value=argparse.Namespace(file="test.txt"))
+    result = parse_args()
+    assert result.file == 'test.txt'
+
+
+def test_text_analyzer_result(mocker, capfd):
+
+    # Arrange & Act
+    mocker.patch("text_analyzer.write_to_db", return_value=None)
+    perform_processing(['tests/data/text1.txt'], '--file')
+    out, _ = capfd.readouterr()
+    result = json.loads(out)[0]
+
+    # Assert
+    assert result["filename"] == "text1.txt"
+    assert result["numberOfCharacters"] == 1355
+    assert result["numberOfWords"] == 274
+    assert result["numberOfSentences"] == 20
+    assert result["frequencyOfCharacters"]["e"] == 148
+    assert result["distributionOfCharacters"]["e"] == "10.92 %"
+    assert result["topMostUsedWords"]["and"] == 5
+    assert result["topLongestWords"][0] == "lemmatization"
+
+
+def test_text_analyzer_db_write_read(capfd, mock_db):
+
+    # Arrange & Act
+    data = {"filename": "test", "data": {}}
+    write_to_db(data)
+    read_from_db(data["filename"])
+    out, _ = capfd.readouterr()
+    result = json.loads(out)
+
+    # Assert
+    assert result["filename"] == "test"
+    assert result["data"] == {}
+
+
+def test_text_analyzer_displays_result_from_db(capfd, mock_db):
+
+    # Arrange & Act
+    perform_processing(['tests/data/text1.txt'], '--file')
+
+    os.system('text_analyzer.py --view text1.txt')
+    out, _ = capfd.readouterr()
+    result = json.loads(out)[0]
+
+    # Assert
+    assert result["filename"] == "text1.txt"

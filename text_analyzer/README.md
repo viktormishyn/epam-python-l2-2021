@@ -5,17 +5,17 @@ Python script that can analyze text and get back some data about it as a result.
 
 ## Install
 
-1. Run `install.sh` to install requirements and dependencies (it will be installed globally)
+1. Run `./scripts/install.sh` to install requirements and dependencies (it will be installed globally)
 
 ## Uninstall
 
-1. Run `uninstall.sh` to remove requirements, dependencies and script itself
+1. Run `./scripts/uninstall.sh` to remove requirements, dependencies and script itself
 
 ## Usage
 
 - Shows a list of commands when called with the flag -h (--help):
   ```bash
-  text analyzer -h
+  textanalyzer -h
   ```
 - Analyzes local txt file(s) and prints the output to the console when called with the flag -f (--file):
   ```bash
@@ -23,26 +23,30 @@ Python script that can analyze text and get back some data about it as a result.
   ```
 - Analyzes txt file from web and prints the output to the console when called with the flag -r (--resource):
   ```bash
-  text analyzer -f <url>
+  textanalyzer -r <url>
   ```
+- Reads previous results from database when called with the flag -v (--view):
+  ```bash
+  textanalyzer -v mytext.txt
+  ``` 
 
 ## Development and Testing
 
-1. To reate virtualenv and install dev requirements run `install_dev.sh`
-2. Activate virtual env:
+1. Build docker image for testing `sudo docker-compose build`
+2. Run terminal in test docker container:
    ```bash
-   source .venv/bin/activate
+   docker-compose run test sh
    ```
-3. Run unit tests:
+3. Run unit tests inside the container:
    ```bash
    pytest
    ```
 4. To see coverage:
    ```bash
-   pytest --cov-report html --cov=.
+   pytest --cov-report html --cov=text_analyzer
    ```
    or
    ```bash
-   pytest --cov-report term-missing --cov=.
+   pytest --cov-report term-missing --cov=text_analyzer
    ```
 5. To uninstall dev environment simply delete .venv folder

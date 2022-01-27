@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import sys
 import re
 import itertools
@@ -9,6 +10,7 @@ import argparse
 import multiprocessing as mp
 import requests
 import logging
+import sqlite3
 
 from typing import List, Dict
 from unicodedata import category
@@ -19,6 +21,10 @@ from datetime import datetime as dt
 # utf-8 punctuation
 PUNCTUATION = ''.join([chr(i) for i in range(sys.maxunicode)
                        if category(chr(i)).startswith("P") and chr(i) != '-'])
+
+# database filename
+DB_FILENAME = os.path.expanduser('~/textanalyzer_results.db')
+DB_TABLENAME = 'texts'
 
 
 class Word():
@@ -46,9 +52,9 @@ class Sentence():
 
 
 class Text():
-    def __init__(self, filename, text) -> None:
+    def __init__(self, file_path, text) -> None:
         # substitute all whitespaces with " "
-        self.filename = filename
+        self.filename = os.path.basename(file_path)
         self.text = re.sub(r"\s+", " ", text)
 
         # list of Sentence objects
@@ -133,14 +139,14 @@ class Text():
         return top_words
 
     @property
-    def longest_words(self) -> Dict[str, int]:
+    def longest_words(self) -> List[str]:
         """Top 10 longest words"""
-        return self.top_words_by_length(reverse=True)
+        return list(self.top_words_by_length(reverse=True).keys())
 
     @property
-    def shortest_words(self) -> Dict[str, int]:
+    def shortest_words(self) -> List[str]:
         """Top 10 shortest words"""
-        return self.top_words_by_length(reverse=False)
+        return list(self.top_words_by_length(reverse=False).keys())
 
     @property
     def longest_sentences(self) -> Dict[str, int]:
@@ -167,9 +173,9 @@ class Text():
         return sorted(set(self.palindromes), key=lambda p: len(p), reverse=True)[:10]
 
 
-def generate_report(filename, text, queue) -> Dict[str, any]:
+def generate_report(file_path, text, queue) -> Dict[str, any]:
     start = timeit.timeit()
-    t = Text(filename, text)
+    t = Text(file_path, text)
     result = {
         "filename": t.filename,
         "numberOfCharacters": t.number_of_characters,
@@ -191,38 +197,51 @@ def generate_report(filename, text, queue) -> Dict[str, any]:
         "timeOfExecution": f"{timeit.timeit() - start} ms"
     }
     queue.put(result)
+    write_to_db(result)
     return result
-    # print(json.dumps(result, indent=4))
 
 
-def parse_args():
-    description = "Python script that can analyze text \
-        and get back some data about it as a result"
-    parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-f', '--file', nargs='+',
-                       metavar='', help="Specify txt file(s)")
-    group.add_argument('-r', '--resource', nargs='+',
-                       metavar='', help="Specify txt file url(s)")
-    args = parser.parse_args()
-    return args
+# ======================== DATABASE ========================
 
 
-def textanalyzer_logger(resource_type='-', resource_name='-'):
-    logger = logging.LoggerAdapter(
-        logging.getLogger(__name__), {"resource_type": resource_type, "resource_name": resource_name})
-    FORMAT = "%(asctime)s|%(resource_type)s|%(resource_name)s|[%(levelname)s]|%(message)s"
-    logging.basicConfig(filename="textanalyzer.log",
-                        format=FORMAT, level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S')
-    return logger
+def write_to_db(result_json) -> None:
+    """Writes file analysis results to database.
+    If entry for this file already exists, result will be replaced with current.
+    """
+    textanalyzer_logger().info("Writing result to db...")
+    conn = sqlite3.connect(DB_FILENAME)
+    cur = conn.cursor()
+    cur.execute(
+        f"CREATE TABLE IF NOT EXISTS {DB_TABLENAME} (filename VARCHAR(50) PRIMARY KEY, data JSON)"
+    )
+    cur.execute("INSERT OR REPLACE INTO texts VALUES(?, ?)", [
+                result_json["filename"], json.dumps(result_json, indent=4)])
+    conn.commit()
+    textanalyzer_logger().info("Result has written to db...")
+
+
+def read_from_db(filename) -> None:
+    """Reads file analysis result from database and prints it out to the console"""
+    conn = sqlite3.connect(DB_FILENAME)
+    cur = conn.cursor()
+    cur.execute(
+        f"SELECT data FROM {DB_TABLENAME} WHERE filename=?", [filename])
+    try:
+        result = cur.fetchall()[0][0]
+        print(f"\n{result}\n")
+    except IndexError:
+        print(f"\nData for this filename not found\n")
+
+
+# ======================== MULTIPROCESSING ========================
 
 
 def perform_processing(args, resource_type):
     processes = []
     queue = mp.Queue()
     try:
-        for filename in args:
-            process_document(filename, resource_type, processes, queue)
+        for file_path in args:
+            process_document(file_path, resource_type, processes, queue)
 
         for process in processes:
             process.join()
@@ -266,6 +285,33 @@ def combine_results(queue):
     textanalyzer_logger().info("Processing completed...")
 
 
+# ======================== ARGS PARSER, LOGGING ========================
+
+
+def parse_args():
+    description = "Python script that can analyze text \
+        and get back some data about it as a result"
+    parser = argparse.ArgumentParser(description=description)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-f', '--file', nargs='+',
+                       metavar='', help="Specify txt file(s)")
+    group.add_argument('-r', '--resource', nargs='+',
+                       metavar='', help="Specify txt file url(s)")
+    group.add_argument('-v', '--view', nargs='+',
+                       metavar='', help="Specify filename")
+    args = parser.parse_args()
+    return args
+
+
+def textanalyzer_logger(resource_type='-', resource_name='-'):
+    logger = logging.LoggerAdapter(
+        logging.getLogger(__name__), {"resource_type": resource_type, "resource_name": resource_name})
+    FORMAT = "%(asctime)s|%(resource_type)s|%(resource_name)s|[%(levelname)s]|%(message)s"
+    logging.basicConfig(filename="textanalyzer.log",
+                        format=FORMAT, level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S')
+    return logger
+
+
 if __name__ == "__main__":
     args = parse_args()
     if args.file:
@@ -273,3 +319,7 @@ if __name__ == "__main__":
 
     elif args.resource:
         perform_processing(args.resource, '--resource')
+
+    elif args.view:
+        for filename in args.view:
+            read_from_db(filename)
